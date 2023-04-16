@@ -1,29 +1,18 @@
 import throttle from 'lodash.throttle';
 
 const player = new Vimeo.Player('vimeo-player');
-const videoplayer = 'videoplayer-current-time';
 
-const getCurrentTime = () => player.getCurrentTime();
+const saveCurrentTime = throttle(() => {
+  player.getCurrentTime().then(currentTime => {
+    localStorage.setItem('videoplayer-current-time', currentTime);
+  });
+}, 1000);
 
-const saveCurrentTimeToLocalStorage = () => {
-  localStorage.setItem(videoplayer, getCurrentTime());
-};
+player.on('timeupdate', saveCurrentTime);
 
-const resumePlaybackFromSavedTime = () => {
-  const savedTime = localStorage.getItem(videoplayer);
-
-  if (savedTime) {
-    player.setCurrentTime(savedTime);
-  }
-};
-
-const throttledSaveCurrentTimeToLocalStorage = throttle(
-  saveCurrentTimeToLocalStorage,
-  1000
-);
-
-player.on('timeupdate', throttledSaveCurrentTimeToLocalStorage);
-
-player.ready().then(() => {
-  resumePlaybackFromSavedTime();
-});
+if (localStorage.getItem('videoplayer-current-time') !== null) {
+  const currentTime = parseFloat(
+    localStorage.getItem('videoplayer-current-time')
+  );
+  player.setCurrentTime(currentTime);
+}
